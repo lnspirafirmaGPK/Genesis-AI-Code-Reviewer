@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { GeminiService } from './services/gemini.service';
 import { detectLanguage } from './utils/language-detection';
 import { translations, Translation } from './utils/translations';
@@ -9,6 +9,9 @@ interface AppError {
   causes: (keyof Translation['errors']['causes'])[];
   actions: (keyof Translation['errors']['actions'])[];
 }
+
+const LOCAL_STORAGE_CODE_KEY = 'ai_code_reviewer_code';
+const LOCAL_STORAGE_LANG_KEY = 'ai_code_reviewer_language';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +30,23 @@ export class AppComponent {
   
   currentLanguage = signal<'en' | 'th'>('en');
   t = computed(() => translations[this.currentLanguage()]);
+
+  constructor() {
+    const savedCode = localStorage.getItem(LOCAL_STORAGE_CODE_KEY) ?? '';
+    this.code.set(savedCode);
+
+    const savedLanguage = localStorage.getItem(LOCAL_STORAGE_LANG_KEY);
+    if (savedLanguage) {
+      this.detectedLanguage.set(savedLanguage);
+    } else if (savedCode) {
+      this.detectedLanguage.set(detectLanguage(savedCode));
+    }
+
+    effect(() => {
+      localStorage.setItem(LOCAL_STORAGE_CODE_KEY, this.code());
+      localStorage.setItem(LOCAL_STORAGE_LANG_KEY, this.detectedLanguage());
+    });
+  }
 
   setLanguage(lang: 'en' | 'th'): void {
     this.currentLanguage.set(lang);
