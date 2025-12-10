@@ -1,5 +1,11 @@
 import { Injectable } from '@angular/core';
-import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
+import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
+import { PerformanceMetrics } from '../app.component';
+
+export interface ReviewResult {
+  performanceMetrics: PerformanceMetrics;
+  reviewFeedback: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class GeminiService {
@@ -12,22 +18,33 @@ export class GeminiService {
     this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
-  async reviewCode(code: string, language: string): Promise<string> {
+  async reviewCode(code: string, language: string): Promise<ReviewResult> {
     const prompt = `
       You are an expert senior software engineer performing a meticulous code review.
-      The provided code snippet is written in ${language}. Please tailor your review to the specific conventions, best practices, and common pitfalls of this language.
+      The provided code snippet is written in ${language}. Please tailor your review and analysis to the specific conventions, best practices, and common pitfalls of this language.
 
-      Analyze the following code snippet and provide detailed, constructive feedback.
+      Analyze the following code snippet and provide two things in your response:
+      1. A performance analysis with estimated metrics.
+      2. A detailed, constructive code review.
 
-      Your review should cover the following aspects:
-      1.  **Potential Bugs & Errors**: Identify any logical errors, edge cases not handled, or potential runtime exceptions.
-      2.  **Performance Optimizations**: Suggest improvements for efficiency, memory usage, and speed.
-      3.  **Best Practices & Readability**: Comment on adherence to ${language}-specific coding standards, naming conventions, and overall code clarity. Suggest ways to make the code more maintainable.
-      4.  **Security Vulnerabilities**: Point out any potential security risks like injection flaws, data exposure, etc.
-      5.  **Refactoring Suggestions**: Provide alternative implementations or design patterns that could improve the code structure.
+      Your response MUST be a valid JSON object with the following structure:
+      {
+        "performanceMetrics": {
+          "executionTime": "<qualitative estimation, e.g., 'Very Fast (<10ms)'>",
+          "memoryUsage": "<qualitative estimation, e.g., 'Low'>",
+          "complexity": "<Big O notation, e.g., 'O(n)'>"
+        },
+        "reviewFeedback": "<Your detailed code review formatted in markdown>"
+      }
 
-      Format your feedback clearly using markdown. Use headings for each section (e.g., "### Potential Bugs").
-      Provide specific code examples for your suggestions where applicable. Be professional and encouraging in your tone.
+      The code review portion should cover:
+      - **Potential Bugs & Errors**: Logical errors, edge cases, potential runtime exceptions.
+      - **Performance Optimizations**: Suggestions for efficiency, memory, and speed.
+      - **Best Practices & Readability**: Adherence to standards, naming conventions, and clarity.
+      - **Security Vulnerabilities**: Potential security risks.
+      - **Refactoring Suggestions**: Alternative implementations or design patterns.
+
+      Be professional and encouraging in your tone.
 
       --- CODE TO REVIEW ---
       \`\`\`${language.toLowerCase() === 'unknown' ? '' : language.toLowerCase()}
@@ -39,10 +56,31 @@ export class GeminiService {
       const response: GenerateContentResponse = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              performanceMetrics: {
+                type: Type.OBJECT,
+                properties: {
+                  executionTime: { type: Type.STRING },
+                  memoryUsage: { type: Type.STRING },
+                  complexity: { type: Type.STRING },
+                },
+              },
+              reviewFeedback: { type: Type.STRING },
+            },
+          },
+        },
       });
-      return response.text;
+      
+      const jsonString = response.text.trim();
+      const result: ReviewResult = JSON.parse(jsonString);
+      return result;
+
     } catch (error) {
-      console.error('Error calling Gemini API:', error);
+      console.error('Error calling Gemini API or parsing response:', error);
       // Re-throw the original error to allow for more specific handling upstream.
       throw error;
     }

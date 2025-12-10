@@ -5,6 +5,7 @@ export interface Translation {
   codePlaceholder: string;
   analyzing: string;
   reviewCode: string;
+  formatCode: string;
   feedback: string;
   copied: string;
   copy: string;
@@ -12,6 +13,10 @@ export interface Translation {
   loadingSubtitle: string;
   waitingForCodeTitle: string;
   waitingForCodeSubtitle: string;
+  performanceReport: string;
+  executionTime: string;
+  memoryUsage: string;
+  complexity: string;
   errors: {
     title: string;
     message: string;
@@ -38,6 +43,7 @@ export const translations: { en: Translation; th: Translation } = {
     codePlaceholder: 'Enter your code snippet here...',
     analyzing: 'Analyzing...',
     reviewCode: 'Review Code',
+    formatCode: 'Format Code',
     feedback: 'Feedback',
     copied: 'Copied!',
     copy: 'Copy',
@@ -45,6 +51,10 @@ export const translations: { en: Translation; th: Translation } = {
     loadingSubtitle: 'This may take a moment.',
     waitingForCodeTitle: 'Waiting for code',
     waitingForCodeSubtitle: 'Paste your code in the editor and click "Review Code" to get started.',
+    performanceReport: 'Performance Report',
+    executionTime: 'Est. Execution Time',
+    memoryUsage: 'Est. Memory Usage',
+    complexity: 'Complexity Analysis',
     errors: {
       title: 'Review Failed',
       message: 'An unexpected error occurred while trying to get feedback from the Gemini API.',
@@ -69,6 +79,7 @@ export const translations: { en: Translation; th: Translation } = {
     codePlaceholder: 'ป้อนข้อมูลโค้ดของคุณที่นี่...',
     analyzing: 'กำลังวิเคราะห์...',
     reviewCode: 'ตรวจสอบโค้ด',
+    formatCode: 'จัดรูปแบบโค้ด',
     feedback: 'ผลตอบรับ',
     copied: 'คัดลอกแล้ว!',
     copy: 'คัดลอก',
@@ -76,6 +87,10 @@ export const translations: { en: Translation; th: Translation } = {
     loadingSubtitle: 'อาจใช้เวลาสักครู่',
     waitingForCodeTitle: 'กำลังรอโค้ด',
     waitingForCodeSubtitle: 'วางโค้ดของคุณในเครื่องมือแก้ไขและคลิก "ตรวจสอบโค้ด" เพื่อเริ่มต้น',
+    performanceReport: 'รายงานประสิทธิภาพ',
+    executionTime: 'เวลาประมวลผลโดยประมาณ',
+    memoryUsage: 'การใช้หน่วยความจำโดยประมาณ',
+    complexity: 'การวิเคราะห์ความซับซ้อน',
     errors: {
       title: 'การตรวจสอบล้มเหลว',
       message: 'เกิดข้อผิดพลาดที่ไม่คาดคิดขณะพยายามรับผลตอบรับจาก Gemini API',
