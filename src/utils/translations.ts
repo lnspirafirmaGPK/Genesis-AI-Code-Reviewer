@@ -17,6 +17,7 @@ export interface Translation {
   executionTime: string;
   memoryUsage: string;
   complexity: string;
+  resetSession: string;
   errors: {
     title: string;
     message: string;
@@ -55,6 +56,7 @@ export const translations: { en: Translation; th: Translation } = {
     executionTime: 'Est. Execution Time',
     memoryUsage: 'Est. Memory Usage',
     complexity: 'Complexity Analysis',
+    resetSession: 'Reset Session',
     errors: {
       title: 'Review Failed',
       message: 'An unexpected error occurred while trying to get feedback from the Gemini API.',
@@ -91,6 +93,7 @@ export const translations: { en: Translation; th: Translation } = {
     executionTime: 'เวลาประมวลผลโดยประมาณ',
     memoryUsage: 'การใช้หน่วยความจำโดยประมาณ',
     complexity: 'การวิเคราะห์ความซับซ้อน',
+    resetSession: 'เริ่มเซสชันใหม่',
     errors: {
       title: 'การตรวจสอบล้มเหลว',
       message: 'เกิดข้อผิดพลาดที่ไม่คาดคิดขณะพยายามรับผลตอบรับจาก Gemini API',

@@ -178,4 +178,16 @@ export class AppComponent {
       console.error('Failed to copy feedback to clipboard:', err);
     });
   }
+
+  resetApp(): void {
+    this.code.set('');
+    this.performanceMetrics.set(null);
+    this.reviewFeedback.set(null);
+    this.isLoading.set(false);
+    this.error.set(null);
+    this.copied.set(false);
+    this.detectedLanguage.set('Plain Text');
+    localStorage.removeItem(LOCAL_STORAGE_CODE_KEY);
+    localStorage.removeItem(LOCAL_STORAGE_LANG_KEY);
+  }
 }
