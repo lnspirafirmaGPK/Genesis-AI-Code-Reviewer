@@ -7,13 +7,24 @@ export interface ReviewResult {
   reviewFeedback: string;
 }
 
+export class GeminiAPIError extends Error {
+  constructor(
+    public type: 'apiKey' | 'network' | 'service' | 'parsing' | 'unknown',
+    message: string,
+    public originalError?: any
+  ) {
+    super(message);
+    this.name = 'GeminiAPIError';
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class GeminiService {
   private ai: GoogleGenAI;
 
   constructor() {
     if (!process.env.API_KEY) {
-      throw new Error('API_KEY environment variable not set');
+      throw new GeminiAPIError('apiKey', 'API_KEY environment variable not set.');
     }
     this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
@@ -41,7 +52,7 @@ export class GeminiService {
       - **Potential Bugs & Errors**: Logical errors, edge cases, potential runtime exceptions.
       - **Performance Optimizations**: Suggestions for efficiency, memory, and speed.
       - **Best Practices & Readability**: Adherence to standards, naming conventions, and clarity.
-      - **Security Vulnerabilities**: Potential security risks.
+      - **Security Vulnerabilities**: Potential security risks, including (but not limited to) SQL injection, cross-site scripting (XSS), insecure direct object references (IDOR), authentication bypasses, data exposure, and improper input validation.
       - **Refactoring Suggestions**: Alternative implementations or design patterns.
 
       Be professional and encouraging in your tone.
@@ -68,9 +79,11 @@ export class GeminiService {
                   memoryUsage: { type: Type.STRING },
                   complexity: { type: Type.STRING },
                 },
+                propertyOrdering: ["executionTime", "memoryUsage", "complexity"],
               },
               reviewFeedback: { type: Type.STRING },
             },
+            propertyOrdering: ["performanceMetrics", "reviewFeedback"],
           },
         },
       });
@@ -79,10 +92,27 @@ export class GeminiService {
       const result: ReviewResult = JSON.parse(jsonString);
       return result;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calling Gemini API or parsing response:', error);
-      // Re-throw the original error to allow for more specific handling upstream.
-      throw error;
+
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new GeminiAPIError('network', 'Network error occurred while connecting to Gemini API.', error);
+      } else if (error instanceof SyntaxError) {
+        throw new GeminiAPIError('parsing', 'Failed to parse Gemini API response as JSON. Model might have returned invalid JSON.', error);
+      } else if (error && typeof error === 'object' && error.error) {
+        const apiError = error.error; 
+        const code = apiError.code;
+        const message = apiError.message || 'An API error occurred.';
+
+        if (code === 401 || code === 403) {
+          throw new GeminiAPIError('apiKey', `Authentication error: ${message}`, error);
+        } else if (code >= 500 && code < 600) {
+          throw new GeminiAPIError('service', `Gemini API service error: ${message}`, error);
+        } else {
+          throw new GeminiAPIError('unknown', `Gemini API responded with an unexpected error: ${message}`, error);
+        }
+      }
+      throw new GeminiAPIError('unknown', `An unknown error occurred: ${error?.message || 'No message provided.'}`, error);
     }
   }
 }

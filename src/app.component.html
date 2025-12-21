@@ -89,10 +89,25 @@
     </div>
 
     <!-- Output Section -->
-    <div class="flex flex-col bg-gray-800 rounded-lg shadow-lg overflow-auto">
-      <div class="p-4 border-b border-gray-700 sticky top-0 bg-gray-800 z-10 flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-white">{{ t().feedback }}</h2>
-        @if (reviewFeedback() || performanceMetrics()) {
+    <div class="flex flex-col bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <div class="p-2 border-b border-gray-700 bg-gray-800 z-10 flex items-center justify-between">
+        <div class="flex">
+          <button
+            (click)="activeOutputTab.set('feedback')"
+            [class]="activeOutputTab() === 'feedback' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'"
+            class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+          >
+            {{ t().feedback }}
+          </button>
+          <button
+            (click)="activeOutputTab.set('history')"
+            [class]="activeOutputTab() === 'history' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'"
+            class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+          >
+            {{ t().history }} ({{ reviewHistory().length }})
+          </button>
+        </div>
+        @if (activeOutputTab() === 'feedback' && (reviewFeedback() || performanceMetrics())) {
           <button 
             (click)="copyFeedback()"
             class="flex items-center space-x-2 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500"
@@ -109,9 +124,19 @@
               <span>{{ t().copy }}</span>
             }
           </button>
+        } @else if (activeOutputTab() === 'history' && reviewHistory().length > 0) {
+          <button 
+            (click)="clearHistory()"
+            class="flex items-center space-x-2 px-3 py-1.5 text-sm bg-red-700 hover:bg-red-600 text-white rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>{{ t().clearHistory }}</span>
+          </button>
         }
       </div>
-      <div class="p-6 flex-grow">
+      <div class="p-6 flex-grow overflow-y-auto">
         @if (isLoading()) {
           <div class="flex flex-col items-center justify-center h-full text-gray-400">
             <svg class="animate-spin h-10 w-10 text-cyan-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -127,9 +152,9 @@
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <h3 class="text-xl font-bold text-red-400">{{ t().errors[errorDetails.titleKey] }}</h3>
+              <h3 class="text-xl font-bold text-red-400">{{ t().errors[errorDetails.type].title }}</h3>
             </div>
-            <p class="mb-6 text-red-200">{{ t().errors[errorDetails.messageKey] }}</p>
+            <p class="mb-6 text-red-200">{{ t().errors[errorDetails.type].message }}</p>
             
             <div class="space-y-5 text-sm">
               <div>
@@ -150,6 +175,36 @@
               </div>
             </div>
           </div>
+        } @else if (activeOutputTab() === 'history') {
+          @if (reviewHistory().length === 0) {
+            <div class="flex flex-col items-center justify-center h-full text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1L21 12h-3.819a5.972 5.972 0 01-2.715 1.157C12.553 13.568 11.08 14 10 14c-1.325 0-2.6-.484-3.597-1.428L3 18V6l2.999-3.001A2 2 0 018 3h4c.732 0 1.41.282 1.936.786L18 7m-5-4l4 4m-4-4l-4 4" />
+              </svg>
+              <p class="text-lg font-medium">{{ t().noHistoryYet }}</p>
+              <p class="text-center text-sm">{{ t().waitingForCodeSubtitle }}</p>
+            </div>
+          } @else {
+            <div class="space-y-4">
+              @for (entry of reviewHistory(); track entry.timestamp) {
+                <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-700 flex flex-col space-y-3">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <span class="px-3 py-1 bg-gray-600 text-cyan-300 text-xs font-semibold rounded-full mr-2">{{ entry.language }}</span>
+                      <p class="text-sm text-gray-400 mt-1">{{ t().reviewedOn }} {{ formatDate(entry.timestamp) }}</p>
+                    </div>
+                    <button 
+                      (click)="loadHistoryEntry(entry)"
+                      class="px-3 py-1.5 text-sm bg-cyan-600 hover:bg-cyan-700 text-white rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500"
+                    >
+                      {{ t().loadEntry }}
+                    </button>
+                  </div>
+                  <pre class="whitespace-pre-wrap bg-gray-800 p-3 rounded-md font-mono text-gray-300 text-xs overflow-auto max-h-24">{{ getShortCodeSnippet(entry.code) }}</pre>
+                </div>
+              }
+            </div>
+          }
         } @else if (performanceMetrics(); as metrics) {
           <!-- Performance Metrics Section -->
           <div class="mb-6">

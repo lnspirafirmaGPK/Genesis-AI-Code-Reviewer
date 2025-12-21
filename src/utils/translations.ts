@@ -18,20 +18,46 @@ export interface Translation {
   memoryUsage: string;
   complexity: string;
   resetSession: string;
+  history: string;
+  noHistoryYet: string;
+  clearHistory: string;
+  loadEntry: string;
+  reviewedOn: string;
   errors: {
-    title: string;
-    message: string;
     commonCauses: string;
     whatToDo: string;
+    apiKey: {
+      title: string;
+      message: string;
+    };
+    network: {
+      title: string;
+      message: string;
+    };
+    service: {
+      title: string;
+      message: string;
+    };
+    parsing: {
+      title: string;
+      message: string;
+    };
+    unknown: {
+      title: string;
+      message: string;
+    };
     causes: {
       apiKey: string;
       network: string;
       service: string;
+      parsing: string;
+      unknown: string;
     };
     actions: {
       verifyKey: string;
       checkNetwork: string;
       tryAgain: string;
+      reportBug: string;
     };
   };
 }
@@ -57,20 +83,46 @@ export const translations: { en: Translation; th: Translation } = {
     memoryUsage: 'Est. Memory Usage',
     complexity: 'Complexity Analysis',
     resetSession: 'Reset Session',
+    history: 'History',
+    noHistoryYet: 'No review history yet.',
+    clearHistory: 'Clear History',
+    loadEntry: 'Load',
+    reviewedOn: 'Reviewed on',
     errors: {
-      title: 'Review Failed',
-      message: 'An unexpected error occurred while trying to get feedback from the Gemini API.',
       commonCauses: 'Common Causes',
       whatToDo: 'What you can try',
+      apiKey: {
+        title: 'API Key Error',
+        message: 'There was an issue with your Gemini API Key. Please ensure it is correctly configured and has the necessary permissions.'
+      },
+      network: {
+        title: 'Network Error',
+        message: 'Could not connect to the Gemini API due to a network issue. Please check your internet connection.'
+      },
+      service: {
+        title: 'Service Unavailable',
+        message: 'The Gemini API service is currently unavailable. This might be a temporary issue on their end.'
+      },
+      parsing: {
+        title: 'Invalid API Response',
+        message: 'Received an unreadable or malformed response from the Gemini API. The model might have returned an invalid JSON.'
+      },
+      unknown: {
+        title: 'An Unknown Error Occurred',
+        message: 'An unexpected error prevented the code review. Please try again or contact support if the issue persists.'
+      },
       causes: {
-        apiKey: 'Invalid or missing API Key.',
-        network: 'Network connectivity issues.',
-        service: 'The Gemini API service may be temporarily unavailable.',
+        apiKey: 'Invalid or missing API Key. Ensure it is set in your environment variables.',
+        network: 'Network connectivity issues (e.g., no internet connection, firewall).',
+        service: 'The Gemini API service may be temporarily unavailable or experiencing high load.',
+        parsing: 'The Gemini API returned data in an unexpected format (not valid JSON as per schema).',
+        unknown: 'An unhandled error occurred during the API call or application processing.',
       },
       actions: {
-        verifyKey: 'Verify that your API_KEY is set correctly.',
-        checkNetwork: 'Check your internet connection.',
-        tryAgain: 'Please try again in a few moments.',
+        verifyKey: 'Verify that your API_KEY environment variable is set correctly and has the required permissions.',
+        checkNetwork: 'Check your internet connection and proxy settings, then try again.',
+        tryAgain: 'Please try again in a few moments. The service might be recovering.',
+        reportBug: 'If this issue persists, please report it to the developers with the console error details.',
       },
     },
   },
@@ -94,20 +146,46 @@ export const translations: { en: Translation; th: Translation } = {
     memoryUsage: 'การใช้หน่วยความจำโดยประมาณ',
     complexity: 'การวิเคราะห์ความซับซ้อน',
     resetSession: 'เริ่มเซสชันใหม่',
+    history: 'ประวัติ',
+    noHistoryYet: 'ยังไม่มีประวัติการตรวจสอบ',
+    clearHistory: 'ล้างประวัติ',
+    loadEntry: 'โหลด',
+    reviewedOn: 'ตรวจสอบเมื่อ',
     errors: {
-      title: 'การตรวจสอบล้มเหลว',
-      message: 'เกิดข้อผิดพลาดที่ไม่คาดคิดขณะพยายามรับผลตอบรับจาก Gemini API',
       commonCauses: 'สาเหตุทั่วไป',
       whatToDo: 'สิ่งที่คุณสามารถลองได้',
+      apiKey: {
+        title: 'ข้อผิดพลาด API Key',
+        message: 'มีปัญหาเกี่ยวกับ Gemini API Key ของคุณ โปรดตรวจสอบให้แน่ใจว่าได้กำหนดค่าไว้อย่างถูกต้องและมีสิทธิ์ที่จำเป็น'
+      },
+      network: {
+        title: 'ข้อผิดพลาดเครือข่าย',
+        message: 'ไม่สามารถเชื่อมต่อกับ Gemini API เนื่องจากปัญหาเครือข่าย โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ'
+      },
+      service: {
+        title: 'บริการไม่พร้อมใช้งาน',
+        message: 'บริการ Gemini API ไม่พร้อมใช้งานในขณะนี้ นี่อาจเป็นปัญหาชั่วคราวจากฝั่งผู้ให้บริการ'
+      },
+      parsing: {
+        title: 'การตอบสนอง API ไม่ถูกต้อง',
+        message: 'ได้รับการตอบสนองที่ไม่สามารถอ่านได้หรือมีรูปแบบผิดพลาดจาก Gemini API โมเดลอาจส่งคืน JSON ที่ไม่ถูกต้อง'
+      },
+      unknown: {
+        title: 'เกิดข้อผิดพลาดที่ไม่รู้จัก',
+        message: 'เกิดข้อผิดพลาดที่ไม่คาดคิดซึ่งขัดขวางการตรวจสอบโค้ด โปรดลองอีกครั้งหรือติดต่อฝ่ายสนับสนุนหากปัญหายังคงอยู่'
+      },
       causes: {
-        apiKey: 'API Key ไม่ถูกต้องหรือขาดหายไป',
-        network: 'ปัญหาการเชื่อมต่อเครือข่าย',
-        service: 'บริการ Gemini API อาจไม่พร้อมใช้งานชั่วคราว',
+        apiKey: 'API Key ไม่ถูกต้องหรือขาดหายไป ตรวจสอบให้แน่ใจว่าได้ตั้งค่าในตัวแปรสภาพแวดล้อมของคุณ',
+        network: 'ปัญหาการเชื่อมต่อเครือข่าย (เช่น ไม่มีอินเทอร์เน็ต, ไฟร์วอลล์).',
+        service: 'บริการ Gemini API อาจไม่พร้อมใช้งานชั่วคราวหรือมีภาระงานสูง',
+        parsing: 'Gemini API ส่งคืนข้อมูลในรูปแบบที่ไม่คาดคิด (ไม่ใช่ JSON ที่ถูกต้องตาม Schema).',
+        unknown: 'เกิดข้อผิดพลาดที่ไม่สามารถจัดการได้ระหว่างการเรียก API หรือการประมวลผลแอปพลิเคชัน.',
       },
       actions: {
-        verifyKey: 'ตรวจสอบว่า API_KEY ของคุณถูกตั้งค่าอย่างถูกต้อง',
-        checkNetwork: 'ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ',
-        tryAgain: 'โปรดลองอีกครั้งในอีกสักครู่',
+        verifyKey: 'ตรวจสอบว่าตัวแปรสภาพแวดล้อม API_KEY ของคุณถูกตั้งค่าอย่างถูกต้องและมีสิทธิ์ที่จำเป็น',
+        checkNetwork: 'ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและการตั้งค่าพร็อกซีของคุณ จากนั้นลองอีกครั้ง',
+        tryAgain: 'โปรดลองอีกครั้งในอีกสักครู่ บริการอาจกำลังกู้คืน',
+        reportBug: 'หากปัญหานี้ยังคงอยู่ โปรดรายงานให้ผู้พัฒนาทราบพร้อมรายละเอียดข้อผิดพลาดในคอนโซล',
       },
     },
   },
