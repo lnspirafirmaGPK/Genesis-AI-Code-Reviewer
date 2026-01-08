@@ -19,6 +19,18 @@
              [class]="currentLanguage() === 'th' ? 'bg-cyan-600 text-white' : 'text-gray-300 hover:bg-gray-600'"
              class="px-2 py-0.5 text-sm font-semibold rounded transition-colors">TH</button>
         </div>
+
+        <button
+          (click)="toggleSettings()"
+          [title]="t().settings.title"
+          class="p-1.5 text-gray-400 rounded-md hover:bg-gray-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+
         <button
           (click)="resetApp()"
           [title]="t().resetSession"
@@ -31,6 +43,96 @@
       </div>
     </div>
   </header>
+
+  <!-- Settings Modal/Panel -->
+  @if (showSettings()) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-gray-800 rounded-lg shadow-xl border border-gray-700 w-full max-w-md overflow-hidden animate-fade-in-up">
+        <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900">
+          <h2 class="text-lg font-bold text-white">{{ t().settings.title }}</h2>
+          <button (click)="toggleSettings()" class="text-gray-400 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="p-6 space-y-6">
+          <!-- Provider Selection -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">{{ t().settings.provider }}</label>
+            <div class="flex space-x-4">
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="provider"
+                  value="gemini"
+                  [checked]="configService.activeProvider() === 'gemini'"
+                  (change)="onProviderChange($event)"
+                  class="text-cyan-600 focus:ring-cyan-500 bg-gray-700 border-gray-600"
+                >
+                <span class="text-white">Gemini</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="provider"
+                  value="openai"
+                  [checked]="configService.activeProvider() === 'openai'"
+                  (change)="onProviderChange($event)"
+                  class="text-cyan-600 focus:ring-cyan-500 bg-gray-700 border-gray-600"
+                >
+                <span class="text-white">OpenAI</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Model Selection -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">{{ t().settings.model }}</label>
+            <select
+              (change)="onModelChange($event)"
+              class="w-full bg-gray-700 text-white border border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+            >
+              @for (model of availableModels(); track model.id) {
+                <option
+                  [value]="model.id"
+                  [selected]="model.id === configService.getActiveModelId()"
+                >
+                  {{ model.name }} {{ model.isReasoning ? '(Reasoning)' : '' }}
+                </option>
+              }
+            </select>
+            <p class="mt-1 text-xs text-gray-400">
+              {{ getActiveModelDescription() }}
+            </p>
+          </div>
+
+          <!-- API Key Input -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">{{ t().settings.apiKey }}</label>
+            <input
+              type="password"
+              [value]="configService.getActiveKey()"
+              (input)="onKeyChange($event)"
+              [placeholder]="t().settings.apiKeyPlaceholder"
+              class="w-full bg-gray-700 text-white border border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-500"
+            >
+            <p class="mt-2 text-xs text-gray-500">
+              Key is stored locally in your browser.
+            </p>
+          </div>
+        </div>
+        <div class="p-4 border-t border-gray-700 bg-gray-900 flex justify-end">
+          <button
+            (click)="toggleSettings()"
+            class="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 transition-colors"
+          >
+            {{ t().settings.close }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 
   <main class="flex-grow container mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
     <!-- Input Section -->

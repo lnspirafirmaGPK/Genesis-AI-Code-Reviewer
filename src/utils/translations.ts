@@ -23,6 +23,16 @@ export interface Translation {
   clearHistory: string;
   loadEntry: string;
   reviewedOn: string;
+  settings: {
+    title: string;
+    provider: string;
+    model: string;
+    apiKey: string;
+    apiKeyPlaceholder: string;
+    save: string;
+    close: string;
+    missingKey: string;
+  };
   errors: {
     commonCauses: string;
     whatToDo: string;
@@ -88,6 +98,16 @@ export const translations: { en: Translation; th: Translation } = {
     clearHistory: 'Clear History',
     loadEntry: 'Load',
     reviewedOn: 'Reviewed on',
+    settings: {
+      title: 'Settings',
+      provider: 'AI Provider',
+      model: 'Model',
+      apiKey: 'API Key',
+      apiKeyPlaceholder: 'Enter your API Key',
+      save: 'Save',
+      close: 'Close',
+      missingKey: 'Please enter a valid API Key in settings.'
+    },
     errors: {
       commonCauses: 'Common Causes',
       whatToDo: 'What you can try',
@@ -151,6 +171,16 @@ export const translations: { en: Translation; th: Translation } = {
     clearHistory: 'ล้างประวัติ',
     loadEntry: 'โหลด',
     reviewedOn: 'ตรวจสอบเมื่อ',
+    settings: {
+      title: 'ตั้งค่า',
+      provider: 'ผู้ให้บริการ AI',
+      model: 'โมเดล',
+      apiKey: 'คีย์ API',
+      apiKeyPlaceholder: 'กรอกคีย์ API ของคุณ',
+      save: 'บันทึก',
+      close: 'ปิด',
+      missingKey: 'กรุณากรอก API Key ที่ถูกต้องในการตั้งค่า'
+    },
     errors: {
       commonCauses: 'สาเหตุทั่วไป',
       whatToDo: 'สิ่งที่คุณสามารถลองได้',
