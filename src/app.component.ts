@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
-import { GeminiAPIError, GeminiService, ReviewResult } from './services/gemini.service';
+import { GeminiAPIError, ReviewResult } from './services/gemini.service';
+import { CodeReviewService } from './services/code-review.service';
+import { ConfigService, AVAILABLE_MODELS, AIProvider, AIModel } from './services/config.service';
 import { detectLanguage } from './utils/language-detection';
 import { translations, Translation } from './utils/translations';
 
@@ -24,12 +26,14 @@ export interface HistoryEntry {
   language: string;
   performanceMetrics: PerformanceMetrics | null;
   reviewFeedback: string | null;
+  provider: string;
+  model: string;
 }
 
 const LOCAL_STORAGE_CODE_KEY = 'ai_code_reviewer_code';
-const LOCAL_STORAGE_LANG_KEY = 'ai_code_reviewer_code_language'; // Renamed to avoid collision
-const LOCAL_STORAGE_APP_LANG_KEY = 'ai_code_reviewer_app_language'; // New key for app language
-const LOCAL_STORAGE_HISTORY_KEY = 'ai_code_reviewer_history'; // New key for review history
+const LOCAL_STORAGE_LANG_KEY = 'ai_code_reviewer_code_language';
+const LOCAL_STORAGE_APP_LANG_KEY = 'ai_code_reviewer_app_language';
+const LOCAL_STORAGE_HISTORY_KEY = 'ai_code_reviewer_history';
 
 @Component({
   selector: 'app-root',
@@ -37,7 +41,8 @@ const LOCAL_STORAGE_HISTORY_KEY = 'ai_code_reviewer_history'; // New key for rev
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
-  private readonly geminiService = inject(GeminiService);
+  private readonly codeReviewService = inject(CodeReviewService);
+  readonly configService = inject(ConfigService);
 
   code = signal<string>('');
   performanceMetrics = signal<PerformanceMetrics | null>(null);
@@ -52,6 +57,10 @@ export class AppComponent {
 
   reviewHistory = signal<HistoryEntry[]>([]);
   activeOutputTab = signal<'feedback' | 'history'>('feedback');
+
+  showSettings = signal<boolean>(false);
+
+  availableModels = computed(() => AVAILABLE_MODELS[this.configService.activeProvider()]);
 
   isFormattingSupported = computed(() => {
     const lang = this.detectedLanguage();
@@ -122,6 +131,39 @@ export class AppComponent {
     this.currentLanguage.set(lang);
   }
 
+  toggleSettings(): void {
+    this.showSettings.update(v => !v);
+  }
+
+  onProviderChange(event: Event): void {
+    const provider = (event.target as HTMLSelectElement).value as AIProvider;
+    this.configService.activeProvider.set(provider);
+  }
+
+  onModelChange(event: Event): void {
+    const model = (event.target as HTMLSelectElement).value;
+    if (this.configService.activeProvider() === 'gemini') {
+      this.configService.activeGeminiModel.set(model);
+    } else {
+      this.configService.activeOpenAIModel.set(model);
+    }
+  }
+
+  onKeyChange(event: Event): void {
+     const key = (event.target as HTMLInputElement).value;
+     if (this.configService.activeProvider() === 'gemini') {
+      this.configService.geminiKey.set(key);
+    } else {
+      this.configService.openaiKey.set(key);
+    }
+  }
+
+  getActiveModelDescription(): string {
+    const models = this.availableModels();
+    const activeId = this.configService.getActiveModelId();
+    return models.find(m => m.id === activeId)?.description || '';
+  }
+
   onCodeInputChange(event: Event): void {
     const textarea = event.target as HTMLTextAreaElement;
     const newCode = textarea.value;
@@ -170,6 +212,17 @@ export class AppComponent {
       return;
     }
 
+    // Check for API Key before starting
+    if (!this.configService.getActiveKey()) {
+        this.error.set({
+            type: 'apiKey',
+            causes: ['apiKey'],
+            actions: ['verifyKey']
+        });
+        this.showSettings.set(true); // Auto open settings
+        return;
+    }
+
     this.isLoading.set(true);
     this.reviewFeedback.set(null);
     this.performanceMetrics.set(null);
@@ -177,7 +230,7 @@ export class AppComponent {
     this.activeOutputTab.set('feedback'); // Switch to feedback tab on new review
 
     try {
-      const result: ReviewResult = await this.geminiService.reviewCode(this.code(), this.detectedLanguage());
+      const result: ReviewResult = await this.codeReviewService.reviewCode(this.code(), this.detectedLanguage());
       this.performanceMetrics.set(result.performanceMetrics);
       this.reviewFeedback.set(result.reviewFeedback);
       this.addToHistory(this.code(), this.detectedLanguage(), result.performanceMetrics, result.reviewFeedback);
@@ -193,6 +246,7 @@ export class AppComponent {
           case 'apiKey':
             causes = ['apiKey'];
             actions = ['verifyKey'];
+            this.showSettings.set(true);
             break;
           case 'network':
             causes = ['network'];
@@ -230,6 +284,8 @@ export class AppComponent {
       language: language,
       performanceMetrics: performanceMetrics,
       reviewFeedback: reviewFeedback,
+      provider: this.configService.activeProvider(),
+      model: this.configService.getActiveModelId()
     };
     this.reviewHistory.update(history => [newEntry, ...history.slice(0, 9)]); // Keep last 10 entries
   }

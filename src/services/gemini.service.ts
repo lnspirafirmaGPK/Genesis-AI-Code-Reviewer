@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
 import { PerformanceMetrics } from '../app.component';
+import { ConfigService } from './config.service';
 
 export interface ReviewResult {
   performanceMetrics: PerformanceMetrics;
@@ -20,16 +21,17 @@ export class GeminiAPIError extends Error {
 
 @Injectable({ providedIn: 'root' })
 export class GeminiService {
-  private ai: GoogleGenAI;
-
-  constructor() {
-    if (!process.env.API_KEY) {
-      throw new GeminiAPIError('apiKey', 'API_KEY environment variable not set.');
-    }
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  }
+  private configService = inject(ConfigService);
 
   async reviewCode(code: string, language: string): Promise<ReviewResult> {
+    const apiKey = this.configService.geminiKey();
+    if (!apiKey) {
+      throw new GeminiAPIError('apiKey', 'API Key is missing. Please configure it in settings.');
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const modelId = this.configService.activeGeminiModel();
+
     const prompt = `
       You are an expert senior software engineer performing a meticulous code review.
       The provided code snippet is written in ${language}. Please tailor your review and analysis to the specific conventions, best practices, and common pitfalls of this language.
@@ -64,8 +66,8 @@ export class GeminiService {
     `;
 
     try {
-      const response: GenerateContentResponse = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const response: GenerateContentResponse = await ai.models.generateContent({
+        model: modelId,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -88,7 +90,8 @@ export class GeminiService {
         },
       });
       
-      const jsonString = response.text.trim();
+      // The response.text property in this SDK version seems to be a string/getter, not a function.
+      const jsonString = (typeof response.text === 'function' ? (response.text as any)() : response.text).trim();
       const result: ReviewResult = JSON.parse(jsonString);
       return result;
 
@@ -99,14 +102,14 @@ export class GeminiService {
         throw new GeminiAPIError('network', 'Network error occurred while connecting to Gemini API.', error);
       } else if (error instanceof SyntaxError) {
         throw new GeminiAPIError('parsing', 'Failed to parse Gemini API response as JSON. Model might have returned invalid JSON.', error);
-      } else if (error && typeof error === 'object' && error.error) {
-        const apiError = error.error; 
-        const code = apiError.code;
-        const message = apiError.message || 'An API error occurred.';
+      } else if (error && typeof error === 'object' && (error.error || error.status)) {
+        // Handling various GoogleGenAI error shapes
+        const status = error.status || error.error?.code;
+        const message = error.message || error.error?.message || 'An API error occurred.';
 
-        if (code === 401 || code === 403) {
+        if (status === 401 || status === 403 || message.includes('API key')) {
           throw new GeminiAPIError('apiKey', `Authentication error: ${message}`, error);
-        } else if (code >= 500 && code < 600) {
+        } else if (status >= 500 && status < 600) {
           throw new GeminiAPIError('service', `Gemini API service error: ${message}`, error);
         } else {
           throw new GeminiAPIError('unknown', `Gemini API responded with an unexpected error: ${message}`, error);
